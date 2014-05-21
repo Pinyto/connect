@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="@string/account_settings" >
+        <EditTextPreference
+                android:title="@string/user_id"
+                android:summary="@string/user_id_summary"
+                android:key="prefUsername"/>
+    </PreferenceCategory>
+
+</PreferenceScreen>
