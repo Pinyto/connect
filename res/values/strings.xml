@@ -5,13 +5,11 @@
     <string name="account_settings">Account Settings</string>
     <string name="user_id">User ID</string>
     <string name="password">Password</string>
-	<string name="user_id_summary">Set Your User ID</string>
-	<string name="password_summary">Set Your Password</string>
 	<string name="information">Information</string>
 	<string name="version">Version</string>
 	<string name="version_nr">1.0</string>
-	<string name="connection">Pinyto Server</string>
-	<string name="connect">Connect to Pinyto Server</string>
+	<string name="connection">Connection</string>
+	<string name="connect_pinyto">Connect to Pinyto Server</string>
 	
 	
 </resources>

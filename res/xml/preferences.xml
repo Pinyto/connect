@@ -2,20 +2,17 @@
 
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
     
-    <PreferenceCategory android:title="@string/connect" >
+    <PreferenceCategory android:title="@string/connect_pinyto" >
         <SwitchPreference
                 android:title="@string/connection"  />
     </PreferenceCategory>
     
-    
     <PreferenceCategory android:title="@string/account_settings" >
         <EditTextPreference
                 android:title="@string/user_id"
-                android:summary="@string/user_id_summary"
                 android:key="prefUsername"/>
         <EditTextPreference
-                android:title="@string/password"
-                android:summary="@string/password_summary"
+                android:title="@string/password"                
                 android:inputType="textPassword"/>
     </PreferenceCategory>
     
