@@ -5,7 +5,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
@@ -44,13 +43,13 @@ public class HttpsConnection extends AsyncTask<String, Void, String>{
 		KeyStore trusted = KeyStore.getInstance("BKS");
 
 		InputStream in = context.getResources().openRawResource(
-				R.raw.pinytostore);
+				R.raw.mykeystorechain);
 		System.out.println("using own SSL certificate");
 		try {
 			// Initialize the keystore with the provided trusted
 			// certificates
 			// Also provide the password of the keystore
-			trusted.load(in, "mysecret".toCharArray());
+			trusted.load(in, "changei".toCharArray());
 		} finally {
 			in.close();
 			return trusted;
@@ -66,7 +65,6 @@ public class HttpsConnection extends AsyncTask<String, Void, String>{
 		tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
 		try {
 			tmf.init(buildKeystore());
-			System.out.println("Build Keystore successful");
 		} catch (KeyStoreException e) {
 			System.out.println("error: No keystore in BKS");
 			e.printStackTrace();
@@ -92,7 +90,6 @@ public class HttpsConnection extends AsyncTask<String, Void, String>{
 	public String openconnection(String formdata) throws IOException{
 		try {
 			buildTrustmanager();
-			System.out.println("Trustmanager build");
 		} catch (NoSuchAlgorithmException e) {
 			System.out.println("error: No Algorithm to build trustmanager");
 			e.printStackTrace();
@@ -100,7 +97,6 @@ public class HttpsConnection extends AsyncTask<String, Void, String>{
 		
 		try {
 			createSSLContext();
-			System.out.println("SSL context created");
 		} catch (KeyManagementException e) {
 			System.out.println("error: No key in trustmanager");
 			e.printStackTrace();
@@ -111,9 +107,8 @@ public class HttpsConnection extends AsyncTask<String, Void, String>{
 			URL url = new URL(httpsURL);
 			HttpsURLConnection urlConnection =
 				    (HttpsURLConnection)url.openConnection();
-			System.out.println("Try to open connection");
+			
 			urlConnection.setSSLSocketFactory(sslcontext.getSocketFactory());
-			System.out.println("Attach SocketFactory");
 			urlConnection.setRequestMethod("POST");
 			urlConnection.setRequestProperty("Host", "cloud.pinyto.de");
 			urlConnection.setRequestProperty("Connection", "keep-alive");

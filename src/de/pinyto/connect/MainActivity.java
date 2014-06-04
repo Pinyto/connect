@@ -25,10 +25,6 @@ public class MainActivity extends Activity {
 
 	}
 	
-	public Context getAppContext(){
-		return this.getBaseContext();
-	}
-	
 	/**
 	 * 
 	 * @return Formdata like username=test&keyhash=1234567890 
@@ -47,9 +43,9 @@ public class MainActivity extends Activity {
 	 */	
 	protected void openConnection() throws NoSuchAlgorithmException, UnsupportedEncodingException{
 		String formdata = getUserdata();
-		Context context = getAppContext();
-		HttpsConnection networkconnection = new HttpsConnection(context, this);
-		networkconnection.execute(formdata);
+		Context context = getBaseContext();
+		HttpsConnection serverConnection = new HttpsConnection(context, this);
+		serverConnection.execute(formdata);
 	}
 	
 	protected void hasConnection(){
