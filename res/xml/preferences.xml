@@ -10,10 +10,13 @@
     <PreferenceCategory android:title="@string/account_settings" >
         <EditTextPreference
                 android:title="@string/user_id"
-                android:key="prefUsername"/>
+                android:key="prefUsername"
+        		android:id="@+id/username"/>
         <EditTextPreference
-                android:title="@string/password"                
-                android:inputType="textPassword"/>
+                android:title="@string/passphrase"                
+                android:inputType="textPassword"
+                android:id="@+id/passphrase"
+                />
     </PreferenceCategory>
     
     <PreferenceCategory android:title="@string/information" >
