@@ -16,6 +16,8 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.interfaces.RSAPrivateKey;
@@ -133,45 +135,84 @@ public class PinytoKeyManager {
         return publicKeyData;
     }
 
-    public String calculateToken(String encryptedToken) {
+    public byte[] decryptToken(String encryptedToken) {
         try {
-            RSAPrivateKeySpec privateKeySpec = new RSAPrivateKeySpec(d, e);
+            RSAPrivateKeySpec privateKeySpec = new RSAPrivateKeySpec(N, d);
             KeyFactory factory = KeyFactory.getInstance("RSA");
             RSAPrivateKey privateKey = (RSAPrivateKey) factory.generatePrivate(privateKeySpec);
-            Cipher cipher = Cipher.getInstance("RSA");
+            Cipher cipher = Cipher.getInstance("RSA/None/OAEPWithSHA-1AndMGF1Padding");
+            //Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-1AndMGF1Padding");
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
-            byte[] decryptedBytes = cipher.doFinal(
-                    Base64.decode(encryptedToken.getBytes("UTF-8"), Base64.NO_WRAP));
+            Log.d("encrypted_token", encryptedToken);
+            Log.d("token length", Integer.toString(Base64.decode(encryptedToken.getBytes("UTF-8"), Base64.NO_WRAP).length));
+            Log.d("token hex", Hextools.bytesToHex(Base64.decode(encryptedToken.getBytes("UTF-8"), Base64.NO_WRAP)));
+            return cipher.doFinal(Base64.decode(encryptedToken.getBytes("UTF-8"), Base64.NO_WRAP));
+        } catch (InvalidKeySpecException e) {
+            Log.d("Token decryption error", "Key data is invalid. This is no RSA key.");
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            Log.d("Token decryption error", "RSA is not implemented.");
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            Log.d("Token decryption error", "Padding not supported.");
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            Log.d("Token decryption error", "The key is invalid.");
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            Log.d("Token decryption error", "UTF-8 is not supported.");
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            Log.d("Token decryption error", "The token has a invalid block size.");
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            Log.d("Token decryption error", "Bad padding.");
+            e.printStackTrace();
+        }
+        return new byte[] {};
+    }
+
+    public String encryptTokenWithPinytoKey(byte[] token) {
+        try {
+            Log.d("decrypted", "successfully");
+            KeyFactory factory = KeyFactory.getInstance("RSA");
+            Cipher cipher = Cipher.getInstance("RSA/None/OAEPWithSHA1AndMGF1Padding");
             RSAPublicKeySpec pinytoPublicKeySpec = new RSAPublicKeySpec(PinytoN, PinytoE);
             RSAPublicKey pinytoPublicKey =
                     (RSAPublicKey) factory.generatePublic(pinytoPublicKeySpec);
             cipher.init(Cipher.ENCRYPT_MODE, pinytoPublicKey);
             return new String(Base64.encode(
-                    cipher.doFinal(decryptedBytes),
+                    cipher.doFinal(token),
                     Base64.NO_WRAP), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            Log.d("Token calculation error", "UTF-8 is not supported.");
+        } catch (NoSuchAlgorithmException e) {
+            Log.d("Token encryption error", "RSA is not implemented.");
             e.printStackTrace();
         } catch (NoSuchPaddingException e) {
-            Log.d("Token calculation error", "Padding not supported.");
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            Log.d("Token calculation error", "The key is invalid.");
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            Log.d("Token calculation error", "RSA is not implemented.");
+            Log.d("Token encryption error", "Padding not supported.");
             e.printStackTrace();
         } catch (InvalidKeySpecException e) {
-            Log.d("Token calculation error", "Key data is invalid. This is no RSA key.");
+            Log.d("Token encryption error", "Key data is invalid. This is no RSA key.");
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            Log.d("Token encryption error", "The key is invalid.");
             e.printStackTrace();
         } catch (IllegalBlockSizeException e) {
-            Log.d("Token calculation error", "The token has a invalid block size.");
+            Log.d("Token encryption error", "The token has a invalid block size.");
             e.printStackTrace();
         } catch (BadPaddingException e) {
-            Log.d("Token calculation error", "Bad padding.");
+            Log.d("Token encryption error", "Bad padding.");
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            Log.d("Token encryption error", "UTF-8 is not supported.");
             e.printStackTrace();
         }
         return "";
+    }
+
+    public String calculateToken(String encryptedToken) {
+        byte[] decryptedTokenBytes = this.decryptToken(encryptedToken);
+        Log.d("decrypted", "successfully");
+        return this.encryptTokenWithPinytoKey(decryptedTokenBytes);
     }
 
     public boolean checkSignature(String encryptedToken, String signature) {

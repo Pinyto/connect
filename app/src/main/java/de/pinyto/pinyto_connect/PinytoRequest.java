@@ -95,6 +95,8 @@ public class PinytoRequest extends AsyncTask<String, Void, String> {
             connection.setRequestProperty("Connection", "keep-alive");
             connection.setDoOutput(true);
             connection.setDoInput(true);
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Accept", "application/json");
             return connection;
         } catch (MalformedURLException e) {
             Log.d("Authentication error", "The URL is malformed. Probably pinytoUrl is wrong.");
@@ -294,6 +296,10 @@ public class PinytoRequest extends AsyncTask<String, Void, String> {
                 requestStream.writeBytes(request.toString());
                 requestStream.flush();
                 requestStream.close();
+                if (connection.getResponseCode() != 200) {
+                    Log.d("response code", Integer.toString(connection.getResponseCode()));
+                    Log.d("response message", connection.getResponseMessage());
+                }
                 InputStream responseStream = connection.getInputStream();
                 InputStreamReader responseReader = new InputStreamReader(responseStream);
                 BufferedReader bufferedResponseReader = new BufferedReader(responseReader);
