@@ -1,6 +1,7 @@
 package de.pinyto.pinyto_connect
 
 import android.os.Bundle
+import android.view.View
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.TextView
@@ -33,5 +34,10 @@ class MainActivity : AppCompatActivity() {
 
         textMessage = findViewById(R.id.message)
         navView.setOnNavigationItemSelectedListener(onNavigationItemSelectedListener)
+    }
+
+    fun buttonClick(view: View) {
+        val connector = PinytoConnector()
+        connector.authenticate("pina", "a12b3")
     }
 }
