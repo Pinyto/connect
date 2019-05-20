@@ -1,6 +1,19 @@
 package de.pinyto.pinyto_connect
 
+import android.util.Base64
+import org.json.JSONObject
 import java.math.BigInteger
+import java.nio.charset.StandardCharsets
+import java.security.KeyFactory
+import java.security.KeyPairGenerator
+import java.security.MessageDigest
+import java.security.interfaces.RSAPrivateKey
+import java.security.interfaces.RSAPublicKey
+import java.security.spec.RSAPrivateKeySpec
+import java.security.spec.RSAPublicKeySpec
+import javax.crypto.Cipher
+import java.security.Signature
+
 
 class PinytoKeyManager {
     private val pinytoN = BigInteger(
@@ -20,4 +33,82 @@ class PinytoKeyManager {
         "354902716444405372190562711789562039944011689062773834284439722273182150964910834681" +
         "668991726977737508228377398684622376557220679678700827641")
     private val pinytoE = BigInteger("65537")
+    private var N: BigInteger? = null
+    private var e: BigInteger? = null
+    private var d: BigInteger? = null
+
+    fun keyExists(): Boolean {
+        if (N == null || e == null || d == null) return false
+        return N!! > BigInteger("2").pow(4095) &&
+                e!! > BigInteger.ONE &&
+                d!! > BigInteger("2").pow(4095)
+    }
+
+    fun getKeyHash(): String {
+        var hashString = N.toString() + e.toString()
+        val hasher = MessageDigest.getInstance("SHA-256")
+        hashString = hasher.digest(hashString.toByteArray(StandardCharsets.UTF_8)).toHexString()
+        return hashString.substring(0, 10)
+    }
+
+    fun getPublicKeyData(): JSONObject {
+        val publicKeyData = JSONObject()
+        publicKeyData.put("N", N.toString())
+        publicKeyData.put("e", e.toString())
+        return publicKeyData
+    }
+
+    fun generateNewKeys() {
+        val kpg = KeyPairGenerator.getInstance("RSA")
+        kpg.initialize(4096)
+        val kp = kpg.genKeyPair()
+        val publicKey = kp.getPublic() as RSAPublicKey
+        N = publicKey.getModulus()
+        e = publicKey.getPublicExponent()
+        val privateKey = kp.getPrivate() as RSAPrivateKey
+        d = privateKey.getPrivateExponent()
+        saveKeyToPrefs()
+    }
+
+    private fun saveKeyToPrefs() {
+        val jsonKeyPair = JSONObject()
+        jsonKeyPair.put("N", N.toString())
+        jsonKeyPair.put("e", e.toString())
+        jsonKeyPair.put("d", d.toString())
+        prefs.jsonKeyPair = jsonKeyPair
+    }
+
+    private fun decryptToken(encryptedToken: String): ByteArray {
+        val privateKeySpec = RSAPrivateKeySpec(N, d)
+        val factory = KeyFactory.getInstance("RSA")
+        val privateKey = factory.generatePrivate(privateKeySpec) as RSAPrivateKey
+        val cipher = Cipher.getInstance("RSA/None/OAEPWithSHA-1AndMGF1Padding")
+        cipher.init(Cipher.DECRYPT_MODE, privateKey)
+        return cipher.doFinal(Base64.decode(encryptedToken.toByteArray(StandardCharsets.UTF_8), Base64.NO_WRAP))
+    }
+
+    private fun encryptTokenWithPinytoKey(token: ByteArray): String {
+        val factory = KeyFactory.getInstance("RSA")
+        val cipher = Cipher.getInstance("RSA/None/OAEPWithSHA1AndMGF1Padding")
+        val pinytoPublicKeySpec = RSAPublicKeySpec(pinytoN, pinytoE)
+        val pinytoPublicKey = factory.generatePublic(pinytoPublicKeySpec) as RSAPublicKey
+        cipher.init(Cipher.ENCRYPT_MODE, pinytoPublicKey)
+        return String(Base64.encode(cipher.doFinal(token), Base64.NO_WRAP), StandardCharsets.UTF_8)
+    }
+
+    fun calculateToken(encryptedToken: String): String {
+        val decryptedTokenByteArray = this.decryptToken(encryptedToken)
+        return this.encryptTokenWithPinytoKey(decryptedTokenByteArray)
+    }
+
+    fun checkSignature(encryptedToken: String, signature: String): Boolean {
+        val pinytoPublicKeySpec = RSAPublicKeySpec(pinytoN, pinytoE)
+        val factory = KeyFactory.getInstance("RSA")
+        val pinytoPublicKey = factory.generatePublic(pinytoPublicKeySpec) as RSAPublicKey
+        for (s in java.security.Security.getAlgorithms("Signature")) println(s)
+        val verifier = Signature.getInstance("SHA256withRSA")
+        verifier.initVerify(pinytoPublicKey)
+        verifier.update(encryptedToken.toByteArray(charset("UTF-8")))
+        return verifier.verify(Base64.decode(signature.toByteArray(charset("UTF-8")), Base64.NO_WRAP))
+    }
 }

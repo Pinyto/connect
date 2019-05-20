@@ -38,6 +38,6 @@ class MainActivity : AppCompatActivity() {
 
     fun buttonClick(view: View) {
         val connector = PinytoConnector()
-        connector.authenticate("pina", "a12b3")
+        connector.getTokenFromKeyserver("pina", "a12b3")
     }
 }
