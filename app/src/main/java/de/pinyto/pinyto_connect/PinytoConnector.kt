@@ -48,10 +48,30 @@ class PinytoConnector() {
         }
     }
 
-    fun authenticate(username: String, keyHash: String) {
+    fun authenticate(username: String, pkm: PinytoKeyManager) {
         val requestPayload = JSONObject()
         requestPayload.put("username", username)
-        requestPayload.put("key_hash", keyHash)
+        requestPayload.put("key_hash", pkm.getKeyHash())
         jsonPostRequest("/authenticate", requestPayload)
+    }
+
+    fun getTokenFromKeyserver(username: String, password: String) {
+        val requestPayload = JSONObject()
+        requestPayload.put("name", username)
+        requestPayload.put("password", password)
+        jsonPostRequest("/keyserver/authenticate", requestPayload)
+    }
+
+    fun registerKey(token: String, pkm: PinytoKeyManager) {
+        val requestPayload = JSONObject()
+        requestPayload.put("token", token)
+        requestPayload.put("public_key", pkm.getPublicKeyData())
+        jsonPostRequest("/register_new_key", requestPayload)
+    }
+
+    fun logout(token: String) {
+        val requestPayload = JSONObject()
+        requestPayload.put("token", token)
+        jsonPostRequest("/logout", requestPayload)
     }
 }
