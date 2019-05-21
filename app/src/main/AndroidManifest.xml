@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <permission android:name="pinyto.permission.CLOUD" />
 
     <application
             android:name=".PreferencedApplication"
@@ -24,6 +25,14 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <service
+                android:name=".PinytoService"
+                android:enabled="true"
+                android:exported="true"
+                android:process=":service_process"
+                android:permission="pinyto.permission.CLOUD" >
+        </service>
     </application>
 
 </manifest>
