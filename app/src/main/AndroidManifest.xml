@@ -2,19 +2,24 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="de.pinyto.pinyto_connect">
 
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <permission android:name="pinyto.permission.CLOUD" />
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
+    <permission android:name="pinyto.permission.CLOUD"/>
 
     <application
             android:name=".PreferencedApplication"
             android:allowBackup="true"
+            android:fullBackupContent="@xml/backup_descriptor"
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
-            android:theme="@style/AppTheme"
-            android:fullBackupContent="@xml/backup_descriptor">
+            android:theme="@style/AppTheme">
+        <activity
+                android:name=".KeyserverLoginRegisterActivity"
+                android:label="@string/login">
+        </activity>
         <activity
                 android:name=".MainActivity"
                 android:label="@string/app_name">
@@ -30,8 +35,10 @@
                 android:name=".PinytoService"
                 android:enabled="true"
                 android:exported="true"
-                android:process=":service_process"
-                android:permission="pinyto.permission.CLOUD" >
+                android:permission="pinyto.permission.CLOUD">
+            <intent-filter>
+                <action android:name="de.pinyto.pinyto_connect.BIND" />
+            </intent-filter>
         </service>
     </application>
 

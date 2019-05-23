@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets
 import javax.net.ssl.HttpsURLConnection
 
 class PinytoConnector() {
-    private fun jsonPostRequest(path: String, requestPayload: JSONObject) {
+    private fun jsonPostRequest(path: String, requestPayload: JSONObject, callback: (Int, JSONObject) -> Unit) {
         doAsync {
             val postData = requestPayload.toString().toByteArray(StandardCharsets.UTF_8)
             val connection = URL(prefs.pinytoUrl + path).openConnection() as HttpsURLConnection
@@ -41,37 +41,79 @@ class PinytoConnector() {
             val result = contentBuilder.toString()
             val responseJson = JSONObject(result)
             uiThread {
-                Log.d("Request", connection.responseCode.toString())
-                Log.d("Request", result)
-                Log.d("Request", responseJson.toString())
+                callback(connection.responseCode, responseJson)
             }
         }
     }
 
-    fun authenticate(username: String, pkm: PinytoKeyManager) {
+    private fun logPinytoError(json: JSONObject) {
+        if (json.has("error")) Log.e("Pinyto Error", json.getString("error"))
+        else Log.e("Pinyto Error", json.toString())
+    }
+
+    private fun checkPinytoError(responseCode: Int, json: JSONObject): Boolean {
+        if (responseCode != 200) {
+            logPinytoError(json)
+            return false
+        }
+        return true
+    }
+
+    fun authenticate(username: String, pkm: PinytoKeyManager, callback: (String) -> Unit) {
         val requestPayload = JSONObject()
         requestPayload.put("username", username)
         requestPayload.put("key_hash", pkm.getKeyHash())
-        jsonPostRequest("/authenticate", requestPayload)
+        jsonPostRequest("/authenticate", requestPayload,
+            fun(responseCode, json) {
+                checkPinytoError(responseCode, json)
+                if (!json.has("token")) {
+                    logPinytoError(json)
+                    return
+                }
+                callback(json.getString("token"))
+            })
     }
 
-    fun getTokenFromKeyserver(username: String, password: String) {
+    fun getTokenFromKeyserver(username: String, password: String, callback: (String) -> Unit) {
         val requestPayload = JSONObject()
         requestPayload.put("name", username)
         requestPayload.put("password", password)
-        jsonPostRequest("/keyserver/authenticate", requestPayload)
+        jsonPostRequest("/keyserver/authenticate", requestPayload,
+            fun(responseCode, json) {
+                checkPinytoError(responseCode, json)
+                if (!json.has("token")) {
+                    logPinytoError(json)
+                    return
+                }
+                callback(json.getString("token"))
+            })
     }
 
-    fun registerKey(token: String, pkm: PinytoKeyManager) {
+    fun registerKey(token: String, pkm: PinytoKeyManager, callback: (Boolean) -> Unit) {
         val requestPayload = JSONObject()
         requestPayload.put("token", token)
         requestPayload.put("public_key", pkm.getPublicKeyData())
-        jsonPostRequest("/register_new_key", requestPayload)
+        jsonPostRequest("/register_new_key", requestPayload,
+            fun(responseCode, json) {
+                if (checkPinytoError(responseCode, json)) {
+                    callback(false)
+                    return
+                }
+                if (!json.has("success")) {
+                    logPinytoError(json)
+                    callback(false)
+                    return
+                }
+                callback(json.getBoolean("success"))
+            })
     }
 
     fun logout(token: String) {
         val requestPayload = JSONObject()
         requestPayload.put("token", token)
-        jsonPostRequest("/logout", requestPayload)
+        jsonPostRequest("/logout", requestPayload,
+            fun(responseCode, json) {
+                checkPinytoError(responseCode, json)
+            })
     }
 }

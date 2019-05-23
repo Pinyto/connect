@@ -3,4 +3,10 @@
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
+    <string name="title_activity_keyserver_login_register">KeyserverLoginRegisterActivity</string>
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="username">username</string>
+    <string name="password">password</string>
+    <string name="retype_password">enter the same password again</string>
 </resources>

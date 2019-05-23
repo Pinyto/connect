@@ -9,6 +9,7 @@ class SharedPreferencesWrapper(context: Context) {
     private val prefsFilename = "de.pinyto.pinyto_connect.prefs"
     private val pinytoUrlKey = "pinyto_url"
     private val jsonKeyPairKey = "private_key_json"
+    private val savedKeyIsRegisteredKey = "saved_key_is_registered"
     private val prefs: SharedPreferences = context.getSharedPreferences(prefsFilename, 0)
 
     var pinytoUrl: String
@@ -18,6 +19,10 @@ class SharedPreferencesWrapper(context: Context) {
     var jsonKeyPair: JSONObject
         get() = JSONObject(prefs.getString(jsonKeyPairKey, "{}"))
         set(value) = prefs.edit().putString(jsonKeyPairKey, value.toString()).apply()
+
+    var savedKeyIsRegistered: Boolean
+        get() = prefs.getBoolean(savedKeyIsRegisteredKey, false)
+        set(value) = prefs.edit().putBoolean(savedKeyIsRegisteredKey, value).apply()
 }
 
 val prefs: SharedPreferencesWrapper = PreferencedApplication.sharedPreferences!!

@@ -68,9 +68,19 @@ class PinytoKeyManager {
         val privateKey = kp.getPrivate() as RSAPrivateKey
         d = privateKey.getPrivateExponent()
         saveKeyToPrefs()
+        prefs.savedKeyIsRegistered = false
     }
 
-    private fun saveKeyToPrefs() {
+    fun loadKeyFromPrefs() {
+        val keyData = prefs.jsonKeyPair
+        if (keyData.has("N") && keyData.has("e") && keyData.has("d")) {
+            N = BigInteger(keyData.getString("N"))
+            e = BigInteger(keyData.getString("e"))
+            d = BigInteger(keyData.getString("d"))
+        }
+    }
+
+    fun saveKeyToPrefs() {
         val jsonKeyPair = JSONObject()
         jsonKeyPair.put("N", N.toString())
         jsonKeyPair.put("e", e.toString())
