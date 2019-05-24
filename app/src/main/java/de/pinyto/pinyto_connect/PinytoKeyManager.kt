@@ -1,6 +1,7 @@
 package de.pinyto.pinyto_connect
 
 import android.util.Base64
+import android.util.Log
 import org.json.JSONObject
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
@@ -62,12 +63,13 @@ class PinytoKeyManager {
         val kpg = KeyPairGenerator.getInstance("RSA")
         kpg.initialize(4096)
         val kp = kpg.genKeyPair()
-        val publicKey = kp.getPublic() as RSAPublicKey
-        N = publicKey.getModulus()
-        e = publicKey.getPublicExponent()
-        val privateKey = kp.getPrivate() as RSAPrivateKey
-        d = privateKey.getPrivateExponent()
+        val publicKey = kp.public as RSAPublicKey
+        N = publicKey.modulus
+        e = publicKey.publicExponent
+        val privateKey = kp.private as RSAPrivateKey
+        d = privateKey.privateExponent
         saveKeyToPrefs()
+        Log.i("PinytoKeyManager", "saved key to prefs:\n${prefs.jsonKeyPair}")
         prefs.savedKeyIsRegistered = false
     }
 

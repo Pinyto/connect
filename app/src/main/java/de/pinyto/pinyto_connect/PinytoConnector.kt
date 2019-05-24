@@ -15,7 +15,8 @@ import javax.net.ssl.HttpsURLConnection
 class PinytoConnector() {
     private fun jsonPostRequest(path: String, requestPayload: JSONObject, callback: (Int, JSONObject) -> Unit) {
         doAsync {
-            val postData = requestPayload.toString().toByteArray(StandardCharsets.UTF_8)
+            val postData = requestPayload.toString(0).toByteArray(StandardCharsets.UTF_8)
+            Log.i("PinytoConnector", "Establishing a connection to ${prefs.pinytoUrl + path} with payload:\n${String(postData, StandardCharsets.UTF_8)}")
             val connection = URL(prefs.pinytoUrl + path).openConnection() as HttpsURLConnection
             connection.connectTimeout = 300000
             connection.connectTimeout = 300000
@@ -24,6 +25,7 @@ class PinytoConnector() {
             connection.setRequestProperty("Content-Type", "application/json")
             connection.setRequestProperty("charset", "utf-8")
             connection.setRequestProperty("Content-length", postData.size.toString())
+            Log.i("PinytoConnector", "Request properties set.")
             try {
                 val outputStream = DataOutputStream(connection.outputStream)
                 outputStream.write(postData)
@@ -31,6 +33,7 @@ class PinytoConnector() {
             } catch (exception: Exception) {
                 Log.e("PinytoConnector", exception.message)
             }
+            Log.i("PinytoConnector", "outputStream flushed.")
             val inputStreamReader = BufferedReader(InputStreamReader(connection.inputStream))
             val contentBuilder = StringBuilder()
             var currentLine = inputStreamReader.readLine()
@@ -39,6 +42,7 @@ class PinytoConnector() {
                 currentLine = inputStreamReader.readLine()
             }
             val result = contentBuilder.toString()
+            Log.i("PinytoConnector", "There was a request to $path with payload:\n${requestPayload.toString(2)}\nThe Answer was:\n$result")
             val responseJson = JSONObject(result)
             uiThread {
                 callback(connection.responseCode, responseJson)
@@ -86,6 +90,23 @@ class PinytoConnector() {
                     return
                 }
                 callback(json.getString("token"))
+            })
+    }
+
+    fun registerAtKeyserver(username: String, password: String, callback: (Boolean) -> Unit) {
+        val requestPayload = JSONObject()
+        requestPayload.put("name", username)
+        requestPayload.put("password", password)
+        Log.i("PinytoConnector", "Sending register request to keyserver.")
+        jsonPostRequest("/keyserver/register", requestPayload,
+            fun(responseCode, json) {
+                checkPinytoError(responseCode, json)
+                if (!json.has("success")) {
+                    logPinytoError(json)
+                    return
+                }
+                Log.i("PinytoConnector", "Register request answered mit success=${json.getBoolean("success")}")
+                callback(json.getBoolean("success"))
             })
     }
 

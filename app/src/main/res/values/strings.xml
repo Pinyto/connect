@@ -9,4 +9,5 @@
     <string name="username">username</string>
     <string name="password">password</string>
     <string name="retype_password">enter the same password again</string>
+    <string name="password_mismatch">The entered passwords do not match!</string>
 </resources>

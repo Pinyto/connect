@@ -12,10 +12,7 @@ import android.os.*
 import android.util.Log
 import android.widget.TextView
 
-class MainActivity : AppCompatActivity() {
-    var pinytoServiceMessenger: Messenger? = null
-    var pinytoServiceIsBound: Boolean = false
-
+class MainActivity: AbstractPinytoServiceConnectedActivity() {
     private lateinit var textMessage: TextView
     private val onNavigationItemSelectedListener = BottomNavigationView.OnNavigationItemSelectedListener { item ->
         when (item.itemId) {
@@ -33,19 +30,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
         false
-    }
-    private val pinytoServiceConnection = object: ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            pinytoServiceMessenger = Messenger(service)
-            pinytoServiceIsBound = true
-            Log.d("ServiceConnection in " + this@MainActivity.localClassName, "Service connected.")
-            checkPinyto()
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            pinytoServiceMessenger = null
-            pinytoServiceIsBound = false
-        }
     }
 
     @SuppressLint("HandlerLeak")
@@ -87,17 +71,10 @@ class MainActivity : AppCompatActivity() {
 
         textMessage = findViewById(R.id.message)
         navView.setOnNavigationItemSelectedListener(onNavigationItemSelectedListener)
-
-        Log.d(this.localClassName, "Now binding to PinytoService...")
-        val bindPinytoServiceIntent = Intent("de.pinyto.pinyto_connect.BIND")
-        bindPinytoServiceIntent.setPackage("de.pinyto.pinyto_connect")
-        applicationContext.bindService(bindPinytoServiceIntent, pinytoServiceConnection, Context.BIND_AUTO_CREATE)
-        Log.d(this.localClassName, "bindService() was called.")
     }
 
-    override fun onDestroy() {
-        if (pinytoServiceIsBound) unbindService(pinytoServiceConnection)
-        super.onDestroy()
+    override fun onPinytoServiceConnected() {
+        checkPinyto()
     }
 
     private fun createAnswerBundle(tag: String): Bundle {

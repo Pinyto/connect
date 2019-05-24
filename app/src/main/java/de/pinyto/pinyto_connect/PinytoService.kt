@@ -46,6 +46,7 @@ class PinytoService: Service() {
                     val answer = Message.obtain()
                     val answerBundle = Bundle()
                     answerBundle.putString("tag", data.getString("tag"))
+                    pinytoKeyManager.loadKeyFromPrefs()
                     answerBundle.putBoolean("pinytoReady", pinytoKeyManager.keyExists() && prefs.savedKeyIsRegistered)
                     answer.data = answerBundle
                     try {
@@ -67,16 +68,35 @@ class PinytoService: Service() {
                         data.getString("password", "")
                     ) { token -> processTokenAndRegisterKey(token) }
                 }
+                "/keyserver/register" -> {
+                    if (!data.containsKey("username") || !data.containsKey("password")) {
+                        Log.e(
+                            "PinytoService",
+                            "Registration at the keyserver is only possible with a username and a password."
+                        )
+                        return
+                    }
+                    val username = data.getString("username", "")
+                    val password = data.getString("password", "")
+                    Log.i("PinytoService", "Registering at keyserver with $username and $password")
+                    pinytoConnector.registerAtKeyserver(username, password, fun (success: Boolean) {
+                        Log.i("PinytoService", "Callback for register: $success")
+                        if (success) {
+                            pinytoConnector.getTokenFromKeyserver(username, password)
+                            { token -> processTokenAndRegisterKey(token) }
+                        }
+                    })
+                }
             }
         }
     }
-
     private val bindingMessenger = Messenger(IncomingHandler())
 
     override fun onCreate() {
         super.onCreate()
         pinytoKeyManager = PinytoKeyManager()
         pinytoKeyManager.loadKeyFromPrefs()
+        Log.i("PinytoService", "key exists: ${pinytoKeyManager.keyExists()}")
         if (!pinytoKeyManager.keyExists()) {
             doAsync {
                 pinytoKeyManager.generateNewKeys()
@@ -90,6 +110,8 @@ class PinytoService: Service() {
     }
 
     fun processTokenAndRegisterKey(encryptedToken: String) {
+        pinytoKeyManager.loadKeyFromPrefs()
+        Log.i("PinytoService", "KeyManager: ${pinytoKeyManager.getPublicKeyData().toString(0)}")
         if (!pinytoKeyManager.keyExists()) {
             Log.e("PinytoService", "Could not register key because the key manager did not have one.")
             return

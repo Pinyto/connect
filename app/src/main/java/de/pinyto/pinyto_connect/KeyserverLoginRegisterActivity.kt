@@ -1,14 +1,18 @@
 package de.pinyto.pinyto_connect
 
-import android.os.Bundle
+import android.content.ComponentName
+import android.content.ServiceConnection
+import android.os.*
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.TextView
+import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_keyserver_login_register.*
 
-class KeyserverLoginRegisterActivity : AppCompatActivity() {
+class KeyserverLoginRegisterActivity: AbstractPinytoServiceConnectedActivity() {
     private lateinit var usernameTextView: TextView
     private lateinit var password1TextView: TextView
     private lateinit var password2TextView: TextView
@@ -43,6 +47,24 @@ class KeyserverLoginRegisterActivity : AppCompatActivity() {
     }
 
     fun loginOrRegister(view: View) {
-
+        val msg = Message.obtain()
+        val bundle = Bundle()
+        if ( nav_view.selectedItemId == R.id.keyserver_navigation_register ) {
+            if (!password1TextView.text.toString().contentEquals(password2TextView.text)) {
+                Toast.makeText(this, R.string.password_mismatch, Toast.LENGTH_SHORT).show()
+                return
+            }
+            bundle.putString("path", "/keyserver/register")
+        } else {
+            bundle.putString("path", "/keyserver/authenticate")
+        }
+        bundle.putString("username", usernameTextView.text.toString())
+        bundle.putString("password", password1TextView.text.toString())
+        msg.data = bundle
+        try {
+            pinytoServiceMessenger?.send(msg)
+        } catch (e: RemoteException) {
+            e.printStackTrace()
+        }
     }
 }
