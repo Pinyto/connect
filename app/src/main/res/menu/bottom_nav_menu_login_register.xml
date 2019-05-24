@@ -3,7 +3,7 @@
 
     <item
             android:id="@+id/keyserver_navigation_login"
-            android:icon="@drawable/ic_home_black_24dp"
+            android:icon="@drawable/ic_login_keyserver"
             android:title="@string/login"/>
 
     <item
