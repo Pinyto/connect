@@ -132,6 +132,7 @@ class PinytoService: Service() {
         pinytoConnector.registerKey(keyserverToken, pinytoKeyManager) {
             success -> prefs.savedKeyIsRegistered = success
             if (success) prefs.username = username
+            pinytoKeyManager.saveKeyToPrefs()
             if (answerTag != null && answerBinder != null) {
                 sendAnswer(answerTag, answerBinder) {
                     it.putBoolean("registeredKey", success)
