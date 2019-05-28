@@ -61,7 +61,8 @@ class PinytoService: Service() {
                     pinytoConnector.getTokenFromKeyserver(
                         data.getString("username", ""),
                         data.getString("password", "")
-                    ) { token -> registerKey(token, data.getString("tag"), data.getBinder("answerBinder")) }
+                    ) { token -> registerKey(token, data.getString("username", ""),
+                        data.getString("tag"), data.getBinder("answerBinder")) }
                 }
                 "/keyserver/register" -> {
                     if (!data.containsKey("username") || !data.containsKey("password")) {
@@ -78,9 +79,13 @@ class PinytoService: Service() {
                         Log.i("PinytoService", "Callback for register: $success")
                         if (success) {
                             pinytoConnector.getTokenFromKeyserver(username, password)
-                            { token -> registerKey(token, data.getString("tag"), data.getBinder("answerBinder")) }
+                            { token -> registerKey(token, data.getString("username", ""),
+                                data.getString("tag"), data.getBinder("answerBinder")) }
                         }
                     })
+                }
+                "/authenticate" -> {
+
                 }
             }
         }
@@ -117,7 +122,7 @@ class PinytoService: Service() {
         }
     }
 
-    fun registerKey(keyserverToken: String, answerTag: String?, answerBinder: IBinder?) {
+    fun registerKey(keyserverToken: String, username: String, answerTag: String?, answerBinder: IBinder?) {
         pinytoKeyManager.loadKeyFromPrefs()
         Log.i("PinytoService", "KeyManager: ${pinytoKeyManager.getPublicKeyData().toString(0)}")
         if (!pinytoKeyManager.keyExists()) {
@@ -126,6 +131,7 @@ class PinytoService: Service() {
         }
         pinytoConnector.registerKey(keyserverToken, pinytoKeyManager) {
             success -> prefs.savedKeyIsRegistered = success
+            if (success) prefs.username = username
             if (answerTag != null && answerBinder != null) {
                 sendAnswer(answerTag, answerBinder) {
                     it.putBoolean("registeredKey", success)
