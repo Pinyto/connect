@@ -1,13 +1,9 @@
 package de.pinyto.pinyto_connect
 
 import android.annotation.SuppressLint
-import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.view.View
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import androidx.appcompat.app.AppCompatActivity
-import android.content.ServiceConnection
 import android.os.*
 import android.util.Log
 import android.widget.TextView
@@ -43,8 +39,8 @@ class MainActivity: AbstractPinytoServiceConnectedActivity() {
                 return
             }
             when (data.getString("tag")) {
-                "checkPinyto" -> {
-                    Log.d(this@MainActivity.localClassName, "checkPinyto received.")
+                CHECK_PINYTO -> {
+                    Log.i(this@MainActivity.localClassName, "$CHECK_PINYTO received.")
                     if (!data.containsKey("pinytoReady")) {
                         Log.e(this@MainActivity.localClassName, "The answer contains no key \"pinytoReady\".")
                         return
@@ -85,11 +81,9 @@ class MainActivity: AbstractPinytoServiceConnectedActivity() {
     }
 
     private fun checkPinyto() {
-        Log.d(this.localClassName, "checkPinyto().")
-        Log.i(this.localClassName, "pinytoServiceIsBound: $pinytoServiceIsBound")
         if (!pinytoServiceIsBound) return
         val msg = Message.obtain()
-        val bundle = createAnswerBundle("checkPinyto")
+        val bundle = createAnswerBundle(CHECK_PINYTO)
         bundle.putString("path", "#check_pinyto")
         msg.data = bundle
         try {
@@ -97,7 +91,6 @@ class MainActivity: AbstractPinytoServiceConnectedActivity() {
         } catch (e: RemoteException) {
             e.printStackTrace()
         }
-        Log.d(this.localClassName, "checkPinyto sent.")
     }
 
     fun buttonClick(view: View) {

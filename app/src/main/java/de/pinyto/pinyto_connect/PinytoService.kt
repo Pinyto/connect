@@ -5,8 +5,10 @@ import android.app.Service
 import android.content.Intent
 import android.os.*
 import android.util.Log
-import android.widget.Toast
 import org.jetbrains.anko.doAsync
+
+const val CHECK_PINYTO = "checkPinyto"
+const val REGISTER_KEY = "registerKey"
 
 class PinytoService: Service() {
     private lateinit var pinytoKeyManager: PinytoKeyManager
@@ -25,34 +27,27 @@ class PinytoService: Service() {
                 Log.e("PinytoService", "Messages to the bound service need to have a path!")
                 return
             }
-            Log.d("PinytoService", "handleMessage() with path: " + data.getString("path"))
+            Log.i("PinytoService", "handleMessage() with path: " + data.getString("path"))
+            if (!data.containsKey("answerBinder")) {
+                Log.e(
+                    "PinytoService",
+                    "Checking is useless without an answer IBinder to send the result."
+                )
+                return
+            }
+            if (!data.containsKey("tag")) {
+                Log.e(
+                    "PinytoService",
+                    "The request needs a tag so the answer can have one and is traceable by it."
+                )
+                return
+            }
             when (data.getString("path")) {
                 "#check_pinyto" -> {
-                    if (!data.containsKey("answerBinder")) {
-                        Log.e(
-                            "PinytoService",
-                            "Checking is useless without an answer IBinder to send the result."
-                        )
-                        return
-                    }
-                    if (!data.containsKey("tag")) {
-                        Log.e(
-                            "PinytoService",
-                            "The request needs a tag so the answer can have one and is traceable by it."
-                        )
-                        return
-                    }
-                    val answerMessenger = Messenger(data.getBinder("answerBinder"))
-                    val answer = Message.obtain()
-                    val answerBundle = Bundle()
-                    answerBundle.putString("tag", data.getString("tag"))
                     pinytoKeyManager.loadKeyFromPrefs()
-                    answerBundle.putBoolean("pinytoReady", pinytoKeyManager.keyExists() && prefs.savedKeyIsRegistered)
-                    answer.data = answerBundle
-                    try {
-                        answerMessenger.send(answer)
-                    } catch (e: RemoteException) {
-                        e.printStackTrace()
+                    Log.i("PinytoService", "Key exisits: ${pinytoKeyManager.keyExists()}\nKey is registered: ${prefs.savedKeyIsRegistered}")
+                    sendAnswer(data.getString("tag"), data.getBinder("answerBinder")) {
+                        it.putBoolean("pinytoReady", pinytoKeyManager.keyExists() && prefs.savedKeyIsRegistered)
                     }
                 }
                 "/keyserver/authenticate" -> {
@@ -66,7 +61,7 @@ class PinytoService: Service() {
                     pinytoConnector.getTokenFromKeyserver(
                         data.getString("username", ""),
                         data.getString("password", "")
-                    ) { token -> processTokenAndRegisterKey(token) }
+                    ) { token -> registerKey(token, data.getString("tag"), data.getBinder("answerBinder")) }
                 }
                 "/keyserver/register" -> {
                     if (!data.containsKey("username") || !data.containsKey("password")) {
@@ -83,7 +78,7 @@ class PinytoService: Service() {
                         Log.i("PinytoService", "Callback for register: $success")
                         if (success) {
                             pinytoConnector.getTokenFromKeyserver(username, password)
-                            { token -> processTokenAndRegisterKey(token) }
+                            { token -> registerKey(token, data.getString("tag"), data.getBinder("answerBinder")) }
                         }
                     })
                 }
@@ -96,7 +91,6 @@ class PinytoService: Service() {
         super.onCreate()
         pinytoKeyManager = PinytoKeyManager()
         pinytoKeyManager.loadKeyFromPrefs()
-        Log.i("PinytoService", "key exists: ${pinytoKeyManager.keyExists()}")
         if (!pinytoKeyManager.keyExists()) {
             doAsync {
                 pinytoKeyManager.generateNewKeys()
@@ -109,16 +103,34 @@ class PinytoService: Service() {
         return bindingMessenger.binder
     }
 
-    fun processTokenAndRegisterKey(encryptedToken: String) {
+    private fun sendAnswer(answerTag: String?, answerBinder: IBinder?, bundleExtender: (answerBundle: Bundle) -> Unit) {
+        val answerMessenger = Messenger(answerBinder)
+        val answer = Message.obtain()
+        val answerBundle = Bundle()
+        answerBundle.putString("tag", answerTag)
+        bundleExtender(answerBundle)
+        answer.data = answerBundle
+        try {
+            answerMessenger.send(answer)
+        } catch (e: RemoteException) {
+            e.printStackTrace()
+        }
+    }
+
+    fun registerKey(keyserverToken: String, answerTag: String?, answerBinder: IBinder?) {
         pinytoKeyManager.loadKeyFromPrefs()
         Log.i("PinytoService", "KeyManager: ${pinytoKeyManager.getPublicKeyData().toString(0)}")
         if (!pinytoKeyManager.keyExists()) {
             Log.e("PinytoService", "Could not register key because the key manager did not have one.")
             return
         }
-        val keyserverToken = pinytoKeyManager.calculateToken(encryptedToken)
         pinytoConnector.registerKey(keyserverToken, pinytoKeyManager) {
             success -> prefs.savedKeyIsRegistered = success
+            if (answerTag != null && answerBinder != null) {
+                sendAnswer(answerTag, answerBinder) {
+                    it.putBoolean("registeredKey", success)
+                }
+            }
         }
     }
 }

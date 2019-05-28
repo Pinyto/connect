@@ -116,7 +116,7 @@ class PinytoConnector() {
         requestPayload.put("public_key", pkm.getPublicKeyData())
         jsonPostRequest("/register_new_key", requestPayload,
             fun(responseCode, json) {
-                if (checkPinytoError(responseCode, json)) {
+                if (!checkPinytoError(responseCode, json)) {
                     callback(false)
                     return
                 }

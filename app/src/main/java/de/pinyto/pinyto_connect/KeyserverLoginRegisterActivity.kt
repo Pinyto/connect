@@ -1,13 +1,11 @@
 package de.pinyto.pinyto_connect
 
-import android.content.ComponentName
-import android.content.ServiceConnection
+import android.annotation.SuppressLint
 import android.os.*
 import android.util.Log
 import android.view.View
 import android.widget.Button
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import androidx.appcompat.app.AppCompatActivity
 import android.widget.TextView
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_keyserver_login_register.*
@@ -17,6 +15,35 @@ class KeyserverLoginRegisterActivity: AbstractPinytoServiceConnectedActivity() {
     private lateinit var password1TextView: TextView
     private lateinit var password2TextView: TextView
     private lateinit var button: Button
+
+    @SuppressLint("HandlerLeak")
+    inner class MessagesFromPinytoServiceHandler: Handler() {
+        override fun handleMessage(msg: Message?) {
+            super.handleMessage(msg)
+            if (msg == null) return
+            val data = msg.data
+            if (!data.containsKey("tag")) {
+                Log.e(this@KeyserverLoginRegisterActivity.localClassName,
+                    "Answering messages need to have a tag!")
+                return
+            }
+            when (data.getString("tag")) {
+                REGISTER_KEY -> {
+                    Log.i(this@KeyserverLoginRegisterActivity.localClassName, "$REGISTER_KEY received.")
+                    if (!data.containsKey("registeredKey")) {
+                        Log.e(this@KeyserverLoginRegisterActivity.localClassName,
+                            "The answer contains no key \"registeredKey\".")
+                        return
+                    }
+                    Log.i("$REGISTER_KEY Answer", data.getBoolean("registeredKey").toString())
+                    if (data.getBoolean("registeredKey")) {
+                        this@KeyserverLoginRegisterActivity.finish()
+                    }
+                }
+            }
+        }
+    }
+    private val pinytoServiceReturnMessenger = Messenger(MessagesFromPinytoServiceHandler())
 
     private val onNavigationItemSelectedListener = BottomNavigationView.OnNavigationItemSelectedListener { item ->
         when (item.itemId) {
@@ -58,6 +85,8 @@ class KeyserverLoginRegisterActivity: AbstractPinytoServiceConnectedActivity() {
         } else {
             bundle.putString("path", "/keyserver/authenticate")
         }
+        bundle.putString("tag", REGISTER_KEY)
+        bundle.putBinder("answerBinder", pinytoServiceReturnMessenger.binder)
         bundle.putString("username", usernameTextView.text.toString())
         bundle.putString("password", password1TextView.text.toString())
         msg.data = bundle

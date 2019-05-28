@@ -42,7 +42,7 @@ class PinytoKeyManager {
         if (N == null || e == null || d == null) return false
         return N!! > BigInteger("2").pow(4095) &&
                 e!! > BigInteger.ONE &&
-                d!! > BigInteger("2").pow(4095)
+                d!! > BigInteger("2").pow(4091)
     }
 
     fun getKeyHash(): String {
@@ -94,8 +94,10 @@ class PinytoKeyManager {
         val privateKeySpec = RSAPrivateKeySpec(N, d)
         val factory = KeyFactory.getInstance("RSA")
         val privateKey = factory.generatePrivate(privateKeySpec) as RSAPrivateKey
-        val cipher = Cipher.getInstance("RSA/None/OAEPWithSHA-1AndMGF1Padding")
+        val cipher = Cipher.getInstance("RSA/None/OAEPwithSHA-1andMGF1Padding")
         cipher.init(Cipher.DECRYPT_MODE, privateKey)
+        Log.i("decryptToken", "Token: ${String(encryptedToken.toByteArray(StandardCharsets.UTF_8))}\nDecoded Base64: ${Base64.decode(encryptedToken.toByteArray(StandardCharsets.UTF_8), Base64.NO_WRAP).toHexString()}")
+        Log.i("decryptToken", "N: ${N.toString()}\ne: ${e.toString()}\nd: ${d.toString()}")
         return cipher.doFinal(Base64.decode(encryptedToken.toByteArray(StandardCharsets.UTF_8), Base64.NO_WRAP))
     }
 
