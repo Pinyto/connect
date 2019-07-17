@@ -54,6 +54,10 @@ class MainActivity: AbstractPinytoServiceConnectedActivity() {
                         startActivity(loginRegisterIntent)
                     }
                 }
+                else -> {
+                    Log.i(this@MainActivity.localClassName, "Generic: ${data.getString("tag")} received.")
+                    Log.i(this@MainActivity.localClassName, data.getString("answer", "!!!EMPTY ANSWER!!!"))
+                }
             }
         }
     }
@@ -100,7 +104,7 @@ class MainActivity: AbstractPinytoServiceConnectedActivity() {
 
         if (!pinytoServiceIsBound) return
         val msg = Message.obtain()
-        val bundle = Bundle()
+        val bundle = createAnswerBundle("generic")
         //bundle.putString("toastedMessage", "It worked!")
         bundle.putString("path", "/foo")
         msg.data = bundle

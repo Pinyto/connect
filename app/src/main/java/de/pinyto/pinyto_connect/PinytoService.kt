@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.*
 import android.util.Log
 import org.jetbrains.anko.doAsync
+import org.json.JSONObject
 
 const val CHECK_PINYTO = "checkPinyto"
 const val REGISTER_KEY = "registerKey"
@@ -20,8 +21,6 @@ class PinytoService: Service() {
             super.handleMessage(msg)
             if (msg == null) return
             val data = msg.data
-            //val dataString = data.getString("toastedMessage")
-            //Toast.makeText(applicationContext, dataString, Toast.LENGTH_SHORT).show()
 
             if (!data.containsKey("path")) {
                 Log.e("PinytoService", "Messages to the bound service need to have a path!")
@@ -86,6 +85,15 @@ class PinytoService: Service() {
                 }
                 "/authenticate" -> {
 
+                }
+                else -> {
+                    val payload = JSONObject(data.getString("payload", "{}"))
+                    pinytoConnector.assemblyRequest(data.getString("path", "/"), payload,
+                        fun (answer: String) {
+                        sendAnswer(data.getString("tag"), data.getBinder("answerBinder")) {
+                            it.putString("answer", answer)
+                        }
+                    })
                 }
             }
         }

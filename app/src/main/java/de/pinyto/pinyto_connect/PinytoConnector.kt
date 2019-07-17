@@ -137,4 +137,11 @@ class PinytoConnector() {
                 checkPinytoError(responseCode, json)
             })
     }
+
+    fun assemblyRequest(path: String, payload: JSONObject, callback: (String) -> Unit) {
+        jsonPostRequest(path, payload,
+            fun(responseCode, json) {
+                if (checkPinytoError(responseCode, json)) callback(json.toString(0))
+            })
+    }
 }
