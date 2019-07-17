@@ -7,6 +7,7 @@ import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.DataOutputStream
 import java.io.InputStreamReader
+import java.io.Reader
 import java.lang.StringBuilder
 import java.net.URL
 import java.nio.charset.StandardCharsets
@@ -34,7 +35,7 @@ class PinytoConnector() {
                 Log.e("PinytoConnector", exception.message)
             }
             Log.i("PinytoConnector", "outputStream flushed.")
-            val inputStreamReader = BufferedReader(InputStreamReader(connection.inputStream))
+            val inputStreamReader = BufferedReader(InputStreamReader(connection.inputStream) as Reader)
             val contentBuilder = StringBuilder()
             var currentLine = inputStreamReader.readLine()
             while (currentLine != null) {
